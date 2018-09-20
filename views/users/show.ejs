@@ -1,0 +1,25 @@
+<% include ../partials/header %>
+    <div class="row">
+        <div class="col-md-4">
+        <h1><%= user.firstName + " " + user.lastName%></h1>
+            <div class="thumbnail">
+                <img src="<%= user.avatar %>" alt = "User Profile Image">
+                <div class="caption"><a href="mailto:<%= user.email %>"><%= user.email %></a></div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+           <h3><%= user.username %>'s restaurants: </h3>
+                <ul>
+                    <% restaurants.forEach(function(restaurant){ %>
+                       <li>
+                           <a href = "/restaurants/<%= restaurants.id %>"><%= restaurant.name%></a>
+                           <div class="thumbnail">
+                               <img src="<%= restaurant.image %>">
+                           </div>
+                       </li>
+                    <% }) %>
+                </ul>
+        </div>
+    </div>
+<% include ../partials/footer %>

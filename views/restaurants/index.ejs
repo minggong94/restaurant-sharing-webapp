@@ -1,0 +1,46 @@
+<% include ../partials/header %>
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css" integrity="sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU" crossorigin="anonymous">
+
+    <header class="jumbotron" id='titleindex'>
+        <div class="container">
+            <h1><i class="fas fa-utensils"></i> Welcome To YelpRestaurant!</h1>
+            <p>Let us view wonderful restaurants <i class="far fa-heart"></i></p>
+            <p>
+                <a class="btn btn-primary btn-lg" href="/restaurants/new">Add a New Restaurant</a>
+            </p>
+            <p>
+                <form action="/restaurants" method="GET" class="form-inline">
+                    <div class="form-group">
+                        <input type="text" name="search" placeholder="Restaurants Search..." class="form-control">
+                        <input type="submit" value="Search" class="btn btn-default">
+                    </div>
+                </form>
+            </p>
+        </div> 
+    </header>
+    
+    <div class="row text-center" style="display:flex; flex-wrap: wrap">
+        <div class="col-lg-12">
+            <% if (noMatch.length > 1) {%>
+                <h3><%= noMatch %></h3>
+            <% } %>
+        </div>
+    </div>
+    
+    <div class="row text-center" style="display:flex; flex-wrap:wrap">
+        <% restaurants.forEach(function(restaurant){ %>        
+            <div class="col-md-3 col-sm-6">
+                <div class="thumbnail">
+                    <img src="<%= restaurant.image%>">
+                    <div class="caption">
+                        <h4> <%= restaurant.name %></h4>
+                    </div>
+                    <p>
+                        <a href="/restaurants/<%= restaurant._id%>" class="btn btn-primary">More Info</a>
+                    </p>
+                </div>
+            </div>
+        <% }); %>
+    </div>
+
+<% include ../partials/footer %>
