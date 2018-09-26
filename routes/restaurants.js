@@ -2,13 +2,26 @@ var express = require("express");
 var router = express.Router();
 var Restaurant = require("../models/restaurant");
 var middleware  = require("../middleware");
+var NodeGeocoder = require('node-geocoder');
+//Node Geocoder API Configuration 
+var options = {
+    provider: 'google',
+    httpAdapter: 'https',
+    apiKey: process.env.GEOCODER_API_KEY,
+    formatter: null
+};
+ 
+var geocoder = NodeGeocoder(options);
+
 var request = require("request");
+//Multer Storge
 var multer = require('multer');
 var storage = multer.diskStorage({
     filename: function(req, file, callback) {
     callback(null, Date.now() + file.originalname);
   }
 });
+//Multer Filter
 var imageFilter = function (req, file, cb) {
     // accept image files only
     if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/i)) {
@@ -16,8 +29,10 @@ var imageFilter = function (req, file, cb) {
     }
     cb(null, true);
 };
-var upload = multer({ storage: storage, fileFilter: imageFilter})
+//Storing Image + Filter
+var upload = multer({ storage: storage, fileFilter: imageFilter});
 
+//Cloudinary Configurqtion
 var cloudinary = require('cloudinary');
 cloudinary.config({
     cloud_name: 'minggong4va', 
@@ -51,28 +66,44 @@ router.get("/", function(req, res){
     }
 });
 
-
-//Create - add new restaurant to DB
-router.post("/", middleware.isLoggedIn, upload.single('image'), function(req, res) {
-    cloudinary.v2.uploader.upload(req.file.path, function(err, result) {
-        if(err) {
-            req.flash("error", err.message);
-            return res.redirect("back");
+//CREATE - add new restaurant to DB
+router.post("/", middleware.isLoggedIn, upload.single('image'), function(req, res){
+    // get data from form and add to restaurants array
+    var name = req.body.restaurant.name;
+    var desc = req.body.restaurant.description;
+    var price = req.body.restaurant.price;
+    var author = {
+        id: req.user._id,
+        username: req.user.username
+    }
+    geocoder.geocode(req.body.location, function (err, data) {
+        if (err || !data.length) {
+            req.flash('error', err.message);
+            return res.redirect('back');
         }
-    // add cloudinary url for the image to the restaurant object under image property
-        req.body.restaurant.image = result.secure_url;
-        req.body.restaurant.imageId = result.public_id;
-    // add author to restaurant
-        req.body.restaurant.author = {
-            id: req.user._id,
-            username: req.user.username,
-        }
-        Restaurant.create(req.body.restaurant, function(err, restaurant) {
-            if (err) {
-                req.flash('error', err.message);
-                return res.redirect('back');
+        cloudinary.v2.uploader.upload(req.file.path, function(err, result) {
+            if(err) {
+                req.flash("error", err.message);
+                return res.redirect("back");
             }
-            res.redirect('/restaurants/' + restaurant.id);
+            // add cloudinary url for the image to the restaurant object under image property
+            var image = result.secure_url;
+            var imageId = result.public_id;
+            var lat = data[0].latitude;
+            var lng = data[0].longitude;
+            var location = data[0].formattedAddress;
+            // eval(require("locus"));
+            var newRestaurant = {name: name, image:image, imageId: imageId, description: desc, price:price, author:author, location: location, lat: lat, lng: lng};
+            // Create a new restaurant and save to DB
+            Restaurant.create(newRestaurant, function(err, newlyCreated){
+                if(err){
+                    console.log(err);
+                } else {
+                //redirect back to restaurants page
+                    console.log(newlyCreated);
+                    res.redirect("/restaurants");
+                }
+            });
         });
     });
 });
@@ -110,30 +141,44 @@ router.get("/:id/edit", middleware.checkCampgroundOwnership, function(req, res) 
 
 //UPDATE restaurants route
 router.put("/:id", middleware.checkCampgroundOwnership, upload.single('image'), function(req, res) {
-    Restaurant.findById (req.params.id, async function(err, restaurant){
-        if(err){
-            req.flash("error", err.message);
-            res.redirect("back");
-        } else {
-            if(req.file){
-                try {
-                    await cloudinary.v2.uploader.destroy(restaurant.imageId);
-                    var result = await cloudinary.v2.uploader.upload(req.file.path);
-                    restaurant.imageId = result.public_id;
-                    restaurant.image = result.secure_url;
-                } catch (err){
-                    req.flash("error", err.massage);
-                    return res.redirect("back");
-                }
-            }
-            restaurant.name = req.body.restaurant.name;
-            restaurant.description = req.body.restaurant.description;
-            restaurant.price = req.body.restaurant.price;
-            restaurant.save();
-            // eval(require("locus"));
-            req.flash("success", "Successfully updated the restaurant.");
-            res.redirect("/restaurants/" + restaurant._id);
+    geocoder.geocode(req.body.location, function (err, data) {
+        if (err || !data.length) {
+            req.flash('error', err.message);
+            return res.redirect('back');
         }
+            var lat = data[0].latitude;
+            var lng = data[0].longitude;
+            var location = data[0].formattedAddress;
+            
+        Restaurant.findById (req.params.id, async function(err, restaurant){
+            if(err){
+                req.flash("error", err.message);
+                res.redirect("back");
+            } else {
+                if(req.file){
+                    try {
+                        await cloudinary.v2.uploader.destroy(restaurant.imageId);
+                        var result = await cloudinary.v2.uploader.upload(req.file.path);
+                        restaurant.imageId = result.public_id;
+                        restaurant.image = result.secure_url;
+                    } catch (err){
+                        req.flash("error", err.massage);
+                        return res.redirect("back");
+                    }
+                    
+                }
+                restaurant.name = req.body.restaurant.name;
+                restaurant.description = req.body.restaurant.description;
+                restaurant.price = req.body.restaurant.price;
+                restaurant.location = location;
+                restaurant.lat = data[0].latitude;
+                restaurant.lng = data[0].longitude;
+                restaurant.save();
+                // eval(require("locus"));
+                req.flash("success", "Successfully updated the restaurant.");
+                res.redirect("/restaurants/" + restaurant._id);
+            }
+        });
     });
 });
 
