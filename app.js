@@ -18,8 +18,8 @@ var commentRoutes     = require("./routes/comments"),
     indexRoutes       = require("./routes/index");
     
 //console.log(process.env.DATABASEURL);
-//mongoose.connect(process.env.DATABASEURL);
-mongoose.connect('mongodb://rest:yelprest1@ds113853.mlab.com:13853/yelprest');
+mongoose.connect(process.env.DATABASEURL);
+//mongoose.connect('mongodb://rest:yelprest1@ds113853.mlab.com:13853/yelprest');
 //mongodb://rest:yelprest1@ds113853.mlab.com:13853/yelprest
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set("view engine","ejs");
