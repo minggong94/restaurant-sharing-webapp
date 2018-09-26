@@ -17,9 +17,9 @@ var commentRoutes     = require("./routes/comments"),
     restaurantRoutes  = require("./routes/restaurants"),
     indexRoutes       = require("./routes/index");
     
-
-// mongoose.connect('mongodb://localhost:27017/yelp_rest');
-mongoose.connect('mongodb://rest:yelprest1@ds113853.mlab.com:13853/yelprest');
+//console.log(process.env.DATABASEURL);
+mongoose.connect(process.env.DATABASEURL);
+// mongoose.connect('mongodb://rest:yelprest1@ds113853.mlab.com:13853/yelprest');
 //mongodb://rest:yelprest1@ds113853.mlab.com:13853/yelprest
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set("view engine","ejs");
