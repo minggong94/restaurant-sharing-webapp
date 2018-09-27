@@ -17,8 +17,8 @@ var commentRoutes     = require("./routes/comments"),
     restaurantRoutes  = require("./routes/restaurants"),
     indexRoutes       = require("./routes/index");
 
-
-mongoose.connect(process.env.DATABASEURL); 
+var url = process.env.DATABASEURL || "mongodb://localhost:27017/yelp_rest";
+mongoose.connect(url); 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set("view engine","ejs");
 app.use(express.static(__dirname+ "/public"));

@@ -6,6 +6,7 @@ var Restaurant  = require("../models/restaurant");
 var async       = require("async");
 var nodemailer  = require("nodemailer");
 var crypto      = require("crypto");
+var request     = require("request");
 
 router.get("/",function(req,res){
     res.render("landing");
@@ -21,6 +22,23 @@ router.get("/register", function(req, res){
 
 //handle sign up logic
 router.post("/register", function(req, res) {
+    const captcha = req.body["g-recaptcha-response"];
+    if (!captcha) {
+        console.log(req.body);
+        req.flash("error", "Please select captcha");
+        return res.redirect("/register");
+    }
+    // secret key
+    var secretKey = process.env.CAPTCHA;
+    // Verify URL
+    var verifyURL = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${captcha}&remoteip=${req.connection.remoteAddress}`;
+    // Make request to Verify URL
+    request.get(verifyURL, (err, response, body) => {
+    // if not successful
+    if (body.success !== undefined && !body.success) {
+        req.flash("error", "Captcha Failed");
+        return res.redirect("/register");
+    }
     var newUser = new User({
         username:req.body.username,
         firstName: req.body.firstName,
@@ -40,6 +58,7 @@ router.post("/register", function(req, res) {
             req.flash("success", "Welcome to YelpRestaurant, " + user.username );
             res.redirect("/restaurants");
         });
+    });
     });
 });
 
